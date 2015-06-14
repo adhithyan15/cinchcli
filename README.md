@@ -15,3 +15,9 @@ To use simple_cli in a project, require the `simple_cli` module
 ```ruby
 require 'simple_cli`
 ```
+
+This should provide you access to the `SimpleCli` module. `SimpleCli` module has a `SimpleCliBuilder` class that can be used to develop a CLI parser. `SimpleCliBuilder` takes in two arguments. First one is a json file and the second one is the `ARGV` parameter from Ruby. 
+
+### JSON File Format
+
+This file is at the heart of simple_cli. You declare all the parts of your CLI tool in this JSON file. This file helps the `SimpleCliBuilder` to extract information from the CLI input and present it to the tool in a meaningful way. 
