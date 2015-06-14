@@ -1,6 +1,6 @@
 require 'json'
 
-class SimpleCli
+class SimpleCliBuilder
   def initialize(config_file)
     @allowable_arguments = config_file
   end
@@ -12,6 +12,6 @@ class SimpleCli
   end
 
   def verify_config_file
-    
+
   end
 end
