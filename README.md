@@ -16,7 +16,26 @@ To use simple_cli in a project, require the `simple_cli` module
 require 'simple_cli`
 ```
 
-This should provide you access to the `SimpleCli` module. `SimpleCli` module has a `SimpleCliBuilder` class that can be used to develop a CLI parser. `SimpleCliBuilder` takes in two arguments. First one is a json file and the second one is the `ARGV` parameter from Ruby. 
+This should provide you access to the `SimpleCli` module. `SimpleCli` module has a `SimpleCliBuilder` class that can be used to develop a CLI parser. `SimpleCliBuilder` takes in two arguments. First one is a json file and the second one is the `ARGV` parameter from Ruby. Here is a simple CLI tool using this method
+
+```ruby
+#!/usr/bin/env ruby
+
+# This code was taken from https://github.com/lsegal/yard/blob/master/bin/yard. The code is licensed under the MIT License.
+
+# We do all this work just to find the proper load path
+path = __FILE__
+while File.symlink?(path)
+  path = File.expand_path(File.readlink(path), File.dirname(path))
+end
+$:.unshift(File.join(File.dirname(File.expand_path(path)), '..', 'lib'))
+
+require 'testcli'
+require 'simple_cli'
+
+parsed_cli_args = SimpleCliBuilder.new("testcli.json",ARGV)
+TestCli.run(parsed_cli_args)
+```
 
 ### JSON File Format
 
