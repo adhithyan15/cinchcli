@@ -40,3 +40,12 @@ TestCli.run(parsed_cli_args)
 ### JSON File Format
 
 This file is at the heart of simple_cli. You declare all the parts of your CLI tool in this JSON file. This file helps the `SimpleCliBuilder` to extract information from the CLI input and present it to the tool in a meaningful way. 
+
+## Errors
+You might run into the following errors when you use `simple_cli` with your CLI tool. The error messages are in the process of being rewritten to make it explicit that these are errors caused by developers not the users. 
+
+### JSONFileNonExistantError
+This error indicates that the JSON file provided doesn't exist. With out the JSON file, `simple_cli` cannot proceed any further. 
+
+### UnParsableJSONError
+This error indicates that the JSON file provided is not a valid JSON. 
