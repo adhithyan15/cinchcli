@@ -39,13 +39,23 @@ TestCli.run(parsed_cli_args)
 
 ### JSON File Format
 
-This file is at the heart of simple_cli. You declare all the parts of your CLI tool in this JSON file. This file helps the `SimpleCliBuilder` to extract information from the CLI input and present it to the tool in a meaningful way. 
+This file is at the heart of simple_cli. You declare all the parts of your CLI tool in this JSON file. This file helps the `SimpleCliBuilder` to extract information from the CLI input and present it to the tool in a meaningful way. The following are the available options that can be included inside the JSON file. 
+
+1. **name** - required - Name of the command line tool. This will be displayed in the automatically generated help message. 
+2. **description** - required - Description of the command line tool. This will be displayed in the automatically generated help message. 
+3. **commands** - required - This parameter should be a JSON object with all the commands in the command line tool. 
 
 ## Errors
-You might run into the following errors when you use `simple_cli` with your CLI tool. The error messages are in the process of being rewritten to make it explicit that these are errors caused by developers not the users. 
+`simple_cli` is built from the ground up to make your command line tool error free. It will do a lot of error checking while your tool is in development. So you might run into the following errors when you use `simple_cli` with your CLI tool. The error messages are in the process of being rewritten to make it explicit that these are errors caused by developers not the users. 
 
 ### JSONFileNonExistantError
 This error indicates that the JSON file provided doesn't exist. With out the JSON file, `simple_cli` cannot proceed any further. 
 
 ### UnParsableJSONError
-This error indicates that the JSON file provided is not a valid JSON. 
+This error indicates that the JSON file provided is not a valid JSON. Please use a tool like http://jsonlint.com/ to fix the problems with your JSON. 
+
+### EmptyJSONError
+This error indicates that the JSON file provided is empty.There is nothing in a empty JSON file to configure `simple_cli`. So please add some configurations into that JSON file. 
+
+### NoNameError
+This error indicates that the `name` parameter is missing from the JSON file. The `name` parameter is very important because it will be displayed in the automatically generated help message. 
