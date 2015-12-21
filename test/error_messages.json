@@ -1,0 +1,8 @@
+{
+  "JSONFileNameNullError": "null_json_file_name.rb",
+  "JSONFileNameNotStringError": "non_string_json_file_name.rb",
+  "JSONFileNameEmptyError": "empty_json_file_name.rb",
+  "JSONFileNonExistantError": "non_existant_json_file.rb",
+  "UnParsableJSONFileError": "unparsable_json_file.rb",
+  "NullARGVError": "null_argv.rb"
+}

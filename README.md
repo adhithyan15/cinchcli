@@ -31,7 +31,7 @@ end
 $:.unshift(File.join(File.dirname(File.expand_path(path)), '..', 'lib'))
 
 require 'testcli'
-require 'simple_cli'
+require 'cinchcli'
 
 parsed_cli_args = CinchCliBuilder.new("testcli.json",ARGV)
 TestCli.run(parsed_cli_args)
