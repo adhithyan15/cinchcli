@@ -1,3 +1,3 @@
 require_relative "../../lib/cinchcli"
 
-CinchCliBuilder.new("../json_files/unparsable.json",ARGV)
+parsed_cli_args = CinchCliBuilder.new("../json_files/unparsable.json",ARGV)

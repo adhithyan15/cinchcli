@@ -25,7 +25,7 @@ end
 # An error for corrupted JSON file
 # Only error without a test in test.rb as I am
 # unable to find a way to corrupt any file manually
-class JSONFileCorruptedError < StandardError
+class InAccessibleJSONFileError < StandardError
 end
 
 ##
@@ -36,4 +36,19 @@ end
 ##
 # An error for a null ARGV
 class NullARGVError < StandardError
+end
+
+##
+# An error for an empty JSON specifications file
+class EmptyJSONSpecsFileError < StandardError
+end
+
+##
+# An error for the absence of the name field in JSON specifications file
+class NoNameFieldInJSONSpecsFileError < StandardError
+end
+
+##
+# An error for a non string type provided as an input to the name field
+class NameFieldInJSONSpecsFileNotStringError < StandardError
 end

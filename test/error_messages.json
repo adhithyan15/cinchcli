@@ -4,5 +4,8 @@
   "JSONFileNameEmptyError": "empty_json_file_name.rb",
   "JSONFileNonExistantError": "non_existant_json_file.rb",
   "UnParsableJSONFileError": "unparsable_json_file.rb",
-  "NullARGVError": "null_argv.rb"
+  "NullARGVError": "null_argv.rb",
+  "EmptyJSONSpecsFileError": "empty_json_file.rb",
+  "NoNameFieldInJSONSpecsFileError": "no_name_field_in_json_file.rb",
+  "NameFieldInJSONSpecsFileNotStringError": "non_string_name_field_in_json_file.rb"
 }

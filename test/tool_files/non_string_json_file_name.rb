@@ -1,3 +1,3 @@
 require_relative "../../lib/cinchcli"
 
-CinchCliBuilder.new(5,ARGV)
+parsed_cli_args = CinchCliBuilder.new(5,ARGV)

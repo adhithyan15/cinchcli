@@ -1,3 +1,3 @@
 require_relative "../../lib/cinchcli"
 
-CinchCliBuilder.new("hello.json",ARGV)
+parsed_cli_args = CinchCliBuilder.new("hello.json",ARGV)
