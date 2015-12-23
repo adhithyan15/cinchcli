@@ -52,3 +52,39 @@ end
 # An error for a non string type provided as an input to the name field
 class NameFieldInJSONSpecsFileNotStringError < StandardError
 end
+
+##
+# An error for an empty string provided as an input to the name field
+class NameFieldInJSONSpecsFileHasEmptyStringError < StandardError
+end
+
+##
+# An error for a String containing multiple words for the name field
+class NameFieldInJSONSpecsFileHasSpacesInBetweenError < StandardError
+end
+
+##
+# An error for the absence of the description field in JSON specifications file
+class NoDescriptionFieldInJSONSpecsFileError < StandardError
+end
+
+##
+# An error for the presence of a non String or an Array of Strings for the
+# description field in JSON specifications file
+class DescriptionFieldInJSONSpecsFileNotStringOrArrayOfStringsError < StandardError
+end
+
+##
+# An error for an empty string provided as an input to the description field
+class DescriptionFieldInJSONSpecsFileHasEmptyStringError < StandardError
+end
+
+##
+# An error for an empty array provided as an input to the description field
+class DescriptionFieldInJSONSpecsFileHasEmptyArrayError < StandardError
+end
+
+##
+# An error for an array with non String elements provided as an input to the description field
+class DescriptionFieldInJSONSpecsFileHasArrayWithNonStringElementsError < StandardError
+end

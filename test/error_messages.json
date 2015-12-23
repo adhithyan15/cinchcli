@@ -7,5 +7,12 @@
   "NullARGVError": "null_argv.rb",
   "EmptyJSONSpecsFileError": "empty_json_file.rb",
   "NoNameFieldInJSONSpecsFileError": "no_name_field_in_json_file.rb",
-  "NameFieldInJSONSpecsFileNotStringError": "non_string_name_field_in_json_file.rb"
+  "NameFieldInJSONSpecsFileNotStringError": "non_string_name_field_in_json_file.rb",
+  "NameFieldInJSONSpecsFileHasEmptyStringError": "empty_string_for_name_field_in_json_file.rb",
+  "NameFieldInJSONSpecsFileHasSpacesInBetweenError" : "multiword_name_field_in_json_file.rb",
+  "NoDescriptionFieldInJSONSpecsFileError": "no_description_field_in_json_file.rb",
+  "DescriptionFieldInJSONSpecsFileNotStringOrArrayOfStringsError" : "non_string_or_array_of_strings_description_field_in_json_file.rb",
+  "DescriptionFieldInJSONSpecsFileHasEmptyStringError": "empty_string_for_description_field_in_json_file.rb",
+  "DescriptionFieldInJSONSpecsFileHasEmptyArrayError": "empty_array_for_description_field_in_json_file.rb",
+  "DescriptionFieldInJSONSpecsFileHasArrayWithNonStringElementsError": "non_string_array_elements_in_description_field_in_json_file.rb"
 }
