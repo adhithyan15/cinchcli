@@ -208,7 +208,7 @@ class CinchCliBuilder
     # a String or an Array
     unless input_specifications_hash["description"].is_a?(String) or input_specifications_hash["description"].is_a?(Array)
       user_note = "User Note: The tool is not currently functional. Please contact the developer!"
-      error_message = "Developer Note: Your JSON tool specifications file specifies a non String or Array value of #{input_specifications_hash["name"]} as the value for the description field."
+      error_message = "Developer Note: Your JSON tool specifications file specifies a non String or Array value of #{input_specifications_hash["description"]} as the value for the description field."
       error_message += " But the description field only takes a String or an Array of Strings as value"
       error_message += " Please make sure that you are providing a String or an Array of Strings as input to the description field before proceeding!\n"
       error_message += user_note
@@ -254,6 +254,69 @@ class CinchCliBuilder
       end
     end
 
+    # Automatically combine the elements of the Array of Strings to form a single large String
+    if input_specifications_hash["description"].is_a?(Array)
+      input_specifications_hash["description"] = input_specifications_hash["description"].join()
+    end
+
+    # The next set of checks will be for the version field
+    # version field is an another required field (design doc)
+    # So first check would be check if the version field is present
+    if input_specifications_hash["version"].nil?
+      user_note = "User Note: The tool is not currently functional. Please contact the developer!"
+      error_message = "Developer Note: Your JSON tool specifications file doesn't specify a version field."
+      error_message += " version field is a required field and without that field Cinchcli cannot produce version help message."
+      error_message += " Please make sure that your JSON specifications file has a version field.\n"
+      error_message += user_note
+      raise NoVersionFieldInJSONSpecsFileError, error_message
+    end
+
+    # version field must have a String value (design doc)
+    # So, second check is to see if the version field has a String value
+    unless input_specifications_hash["version"].is_a?(String)
+      user_note = "User Note: The tool is not currently functional. Please contact the developer!"
+      error_message = "Developer Note: Your JSON tool specifications file specifies a non String value of #{input_specifications_hash["version"]} as the value for the version field"
+      error_message += " But the version field only takes a String value."
+      error_message += " Please make sure that you are providing a String value as input to the version field before proceeding!\n"
+      error_message += user_note
+      raise VersionFieldInJSONSpecsFileNotStringError, error_message
+    end
+
+    # Next check is to see if the version field is an empty string
+    # version field should be of length > 0 (design doc)
+    if input_specifications_hash["version"].strip.eql?("")
+      user_note = "User Note: The tool is not currently functional. Please contact the developer!"
+      error_message = "Developer Note: Your JSON tool specifications file specifies an empty string for the version field"
+      error_message += " But the version field only takes a String value that is of non zero length and made up entirely of non space characters."
+      error_message += " Please make sure that you are providing a non empty String for the version field\n"
+      error_message += user_note
+      raise VersionFieldInJSONSpecsFileHasEmptyStringError, error_message
+    end
+
+    # Finally check some optional fields to see whether they are present by any chance
+    # default_help_messages_on takes only a Boolean field. So let us check that.
+    unless input_specifications_hash["default_help_messages_on"].nil?
+      unless [true,false].include?(input_specifications_hash["default_help_messages_on"])
+        user_note = "User Note: The tool is not currently functional. Please contact the developer!"
+        error_message = "Developer Note: Your JSON tool specifications file specifies a non Boolean value for the default_help_messages_on field."
+        error_message += " default_help_messages_on field takes only a Boolean value."
+        error_message += " Please make sure that your JSON specifications file has a Boolean value for the default_help_messages_on.\n"
+        error_message += user_note
+        raise DefaultHelpMessagesOnFieldInJSONSpecsFileHasNonBooleanValueError, error_message
+      end
+    end
+
+    unless input_specifications_hash["default_version_messages_on"].nil?
+      unless [true,false].include?(input_specifications_hash["default_version_messages_on"])
+        user_note = "User Note: The tool is not currently functional. Please contact the developer!"
+        error_message = "Developer Note: Your JSON tool specifications file specifies a non Boolean value for the default_version_messages_on field."
+        error_message += " default_version_messages_on field takes only a Boolean value."
+        error_message += " Please make sure that your JSON specifications file has a Boolean value for the default_version_messages_on.\n"
+        error_message += user_note
+        raise DefaultVersionMessagesOnFieldInJSONSpecsFileHasNonBooleanValueError, error_message
+      end
+    end
+
     return input_specifications_hash
   end
 
@@ -273,15 +336,56 @@ class CinchCliBuilder
     # First Case
     # Empty ARGV indicating that no command line arguments or options were passed in
     if @argv.length == 0
-      # Two cases need to be handled
+      # In that case two subcases need to be handled
       # * if global_command is set to false, then the default message will be the output
       # * if global_command is set to true, then the global_command will be set to true in
       #   the output hash. This case will be handled by the generate_output_hash method.
       if specifications["global_command"].nil?
         puts generate_help_message()
+        abort()
       elsif specifications["global_command"] == true
         return generate_output_hash()
       end
+    end
+
+    # Second Case
+    # ARGV of length 1. This means that one argument or option is passed along with the
+    # global command.
+    if @argv.length == 1
+      # In that case five subcases need to be handled
+      # * if ARGV[0] is one of --help, help or -h and default_help_messages_on is either nil or true
+      #   then build and show the default help message.
+      # * if ARGV[0] is one of --help, help or -h and default_help_messages_on is false,
+      #   then pass ARGV[0] to generate_output_hash to set the corresponding ARGV[0] to true.
+      # * if ARGV[0] is one of --version, version or -v and default_version_messages_on is either nil or true
+      #   then build and show the default version message.
+      # * if ARGV[0] is one of --version, version or -v and default_version_messages_on is false,
+      #   then pass ARGV[0] to generate_output_hash to set the corresponding ARGV[0] to true.
+      # * if ARGV[0] is anything else, then it is passed to generate_output_hash to set the
+      #   corresponding ARGV[0] to true. If multiple single hyphen commands are combined into
+      #   one large hyphen command, then the generate_output_hash method will mark each one
+      #   of those commands as true
+
+      help_commands = %w{--help -h help}
+      version_commands = %w{--version -v version}
+      build_hash = {}
+
+      if help_commands.include?(@argv[0]) and (specifications["default_help_messages_on"].nil? or specifications["default_help_messages_on"])
+        puts generate_help_message()
+        abort()
+      elsif help_commands.include?(@argv[0]) and specifications["default_help_messages_on"] == false
+        build_hash[@argv[0]] = true
+        return generate_output_hash(build_hash)
+      elsif version_commands.include?(@argv[0]) and (specifications["default_version_messages_on"].nil? or specifications["default_version_messages_on"])
+        puts generate_version_message()
+        abort()
+      elsif version_commands.include?(@argv[0]) and specifications["default_version_messages_on"] == false
+        build_hash[@argv[0]] = true
+        return generate_output_hash(build_hash)
+      else
+
+      end
+
     end
 
   end
@@ -290,8 +394,40 @@ class CinchCliBuilder
   # generate_output_hash method builds the output hash that will be used by the
   # developers to build out the CLI tool. It is essentially the parsed
   # output based on the tool specifications.
-  def generate_output_hash(input_argv = [])
+  def generate_output_hash(input_build_hash = {})
+    # Get the Tool specifications to validate the input commands
+    specifications = @input_tool_specifications
 
+    # The following are passthrough commands for which command verification
+    # is unnecessary.
+    passthrough_commands = %w{--help -h help --version -v version}
+
+    # The output hash will be built up from the provided input Hash
+    # Each key will be verified to see if it is present in the specifications
+    # or not. Multiple single hyphenated command will be split up and each
+    # individual component will be checked against the specifications.
+    output_hash = {}
+
+    # If the input_build_hash is empty, that means that the global_command was called
+    if input_build_hash == {}
+      output_hash["global_command"] = true
+    else
+      # We have a large number of edge cases to consider here
+      # First, we need to extract the keys from the input_argv Hash and
+      # each individual key needs to be examined to see if it meets specifications
+      input_keys = input_build_hash.keys
+
+      # If input_keys has a length of one, then it means that we have one
+      # of the passthrough commands provided above or we have a custom command
+      # or a custom single hyphenated combo command
+      if input_keys.length == 1
+        if passthrough_commands.include?(input_keys[0])
+          output_hash = input_build_hash
+        end
+      end
+    end
+
+    return output_hash
   end
 
   ##
@@ -308,6 +444,20 @@ class CinchCliBuilder
       output_help_message += "\n"
       output_help_message += "#{specifications["description"]}"
     end
+    return output_help_message
+  end
+
+  ##
+  # generate_error_message method builds an error message based on the invalid
+  # input provided. It also provide a fuzzy searched closest match query
+  # as a suggestion to the user
+
+  ##
+  # generate_version_message method builds and returns a version number message
+  # This message is shown for --version, -v, version commands
+  def generate_version_message()
+    specifications = @input_tool_specifications
+    output_help_message = "#{specifications["name"]} version #{specifications["version"]}"
     return output_help_message
   end
 

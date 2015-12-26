@@ -1,0 +1,6 @@
+{
+  "name":"helloworld",
+  "description":"An awesome testing script",
+  "version": "0.11.1",
+  "default_version_messages_on": 5
+}

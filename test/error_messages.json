@@ -14,5 +14,10 @@
   "DescriptionFieldInJSONSpecsFileNotStringOrArrayOfStringsError" : "non_string_or_array_of_strings_description_field_in_json_file.rb",
   "DescriptionFieldInJSONSpecsFileHasEmptyStringError": "empty_string_for_description_field_in_json_file.rb",
   "DescriptionFieldInJSONSpecsFileHasEmptyArrayError": "empty_array_for_description_field_in_json_file.rb",
-  "DescriptionFieldInJSONSpecsFileHasArrayWithNonStringElementsError": "non_string_array_elements_in_description_field_in_json_file.rb"
+  "DescriptionFieldInJSONSpecsFileHasArrayWithNonStringElementsError": "non_string_array_elements_in_description_field_in_json_file.rb",
+  "NoVersionFieldInJSONSpecsFileError": "no_version_field_in_json_file.rb",
+  "VersionFieldInJSONSpecsFileNotStringError": "non_string_version_field_in_json_file.rb",
+  "VersionFieldInJSONSpecsFileHasEmptyStringError": "empty_string_for_version_field_in_json_file.rb",
+  "DefaultHelpMessagesOnFieldInJSONSpecsFileHasNonBooleanValueError": "non_boolean_default_help_messages_on_field_in_json_file.rb",
+  "DefaultVersionMessagesOnFieldInJSONSpecsFileHasNonBooleanValueError": "non_boolean_default_version_messages_on_field_in_json_file.rb"
 }

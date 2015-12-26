@@ -22,9 +22,7 @@ class JSONFileNonExistantError < StandardError
 end
 
 ##
-# An error for corrupted JSON file
-# Only error without a test in test.rb as I am
-# unable to find a way to corrupt any file manually
+# An error for an inaccessible or corrupted JSON file
 class InAccessibleJSONFileError < StandardError
 end
 
@@ -87,4 +85,29 @@ end
 ##
 # An error for an array with non String elements provided as an input to the description field
 class DescriptionFieldInJSONSpecsFileHasArrayWithNonStringElementsError < StandardError
+end
+
+##
+# An error for the absence of the version field in JSON specifications file
+class NoVersionFieldInJSONSpecsFileError < StandardError
+end
+
+##
+# An error for a non string type provided as an input to the version field
+class VersionFieldInJSONSpecsFileNotStringError < StandardError
+end
+
+##
+# An error for an empty string provided as an input to the version field
+class VersionFieldInJSONSpecsFileHasEmptyStringError < StandardError
+end
+
+##
+# An error for a non Boolean value for the default_help_messages_on field
+class DefaultHelpMessagesOnFieldInJSONSpecsFileHasNonBooleanValueError < StandardError
+end
+
+##
+# An error for a non Boolean value for the default_help_messages_on field
+class DefaultVersionMessagesOnFieldInJSONSpecsFileHasNonBooleanValueError < StandardError
 end

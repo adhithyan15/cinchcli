@@ -1,0 +1,8 @@
+{
+  "name": "helloworld",
+  "description": [
+    "This is a multiline description. ",
+    "You can have as many lines as you want. ",
+    "They will be combined into one single String for output!"
+  ]
+}
