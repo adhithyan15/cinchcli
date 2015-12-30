@@ -32,10 +32,11 @@ puts "The total number of tests to be executed is #{test_count}"
 puts "\n"
 error_names.each do |error_name|
   puts "File Name: #{error_names_files[error_name]}"
-  puts "Checking For Error: #{error_name}"
+  actual_error_name, trash = error_name.split("-")
+  puts "Checking For Error: #{actual_error_name}"
   stdout, stdeerr, status = Open3.capture3("ruby #{error_names_files[error_name]}")
   puts stdeerr
-  if stdeerr.include?(error_name)
+  if stdeerr.include?(actual_error_name)
     puts checkmark.encode('utf-8').green
   else
     puts wrong.encode('utf-8').red

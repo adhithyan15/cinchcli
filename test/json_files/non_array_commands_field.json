@@ -1,0 +1,6 @@
+{
+  "name": "pwd",
+  "description": "Print the full filename of the current working directory",
+  "version": "0.0.1",
+  "commands":false
+}

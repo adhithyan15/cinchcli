@@ -1,0 +1,20 @@
+{
+  "name": "pwd",
+  "description": "Print the full filename of the current working directory",
+  "version": "0.0.1",
+  "global_command": true,
+  "commands":[
+    {
+      "short-option":"L",
+      "long-option":"logical",
+      "plain":"logical",
+      "description":"use PWD from environment, even if it contains symlinks"
+    },
+    {
+      "short-option":"P",
+      "long-option":"physical",
+      "hello":"physical",
+      "description":"avoid all symlinks"
+    }
+  ]
+}

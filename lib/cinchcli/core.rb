@@ -1,5 +1,6 @@
 require_relative 'error'
 require 'json'
+require 'set'
 
 ##
 # CinchCliBuilder class is the interface to the features provided by the
@@ -20,7 +21,10 @@ require 'json'
 # @author Adhithya Rajasekaran
 
 class CinchCliBuilder
-  # @param tool_specification [String] name of the JSON file containing the tool specification
+  ##
+  # initialize method creates a new CinchCliBuilder object and parses the ARGV
+  # If the input JSON file is not valid, then it raises one of several possible errors.
+  # @param tool_specification_file [String] name of the JSON file containing the tool specification
   # @param input_argv [String] Ruby's ARGV object
 
   def initialize(tool_specification_file, input_argv)
@@ -32,6 +36,9 @@ class CinchCliBuilder
     @parsed_argv = build_output()
   end
 
+  ##
+  # parse method returns the output Hash containing the parsed CLI input
+  # @return [Hash] An output Hash containing the parsed CLI inputs
   def parse
     return @parsed_argv
   end
@@ -317,6 +324,43 @@ class CinchCliBuilder
       end
     end
 
+    unless input_specifications_hash["commands"].nil?
+      unless input_specifications_hash["commands"].is_a?(Array)
+        user_note = "User Note: The tool is not currently functional. Please contact the developer!"
+        error_message = "Developer Note: Your JSON tool specifications file specifies a non Array value for the commands field."
+        error_message += " commands field takes only a Array value."
+        error_message += " Please make sure that your JSON specifications file has a Array value for the commands field.\n"
+        error_message += user_note
+        raise CommandsFieldInJSONSpecsFileHasNonArrayValueError, error_message
+      end
+    end
+
+    unless input_specifications_hash["commands"].nil?
+      unless check_for_empty_objects(input_specifications_hash["commands"])
+        user_note = "User Note: The tool is not currently functional. Please contact the developer!"
+        error_message = "Developer Note: Your JSON tool specifications file specifies an Array value for the commands field that has at least one empty command object."
+        error_message += " Only non-empty command objects are allowed. Either remove the empty command object or fill it up with acceptable fields."
+        error_message += " Please fix this issue before proceeding!\n"
+        error_message += user_note
+        raise CommandsFieldInJSONSpecsFileHasEmptyCommandObjectsError, error_message
+      end
+    end
+
+    unless input_specifications_hash["commands"].nil?
+      commands_verified, custom_error_message = verify_command_objects(input_specifications_hash["commands"])
+      unless commands_verified
+        user_note = "User Note: The tool is not currently functional. Please contact the developer!"
+        error_message = "Developer Note: Your JSON tool specifications file specifies an Array value for the commands field that has at least one invalid command object."
+        #error_message += " Valid fields for the command object can be found at https://github.com/adhithyan15/cinchcli/wiki/Design-Doc."
+        error_message += custom_error_message
+        error_message += " Please fix this issue before proceeding!\n"
+        error_message += user_note
+        raise CommandsFieldInJSONSpecsFileHasInvalidCommandObjectsError, error_message
+      end
+    end
+
+
+
     return input_specifications_hash
   end
 
@@ -337,7 +381,7 @@ class CinchCliBuilder
     # Empty ARGV indicating that no command line arguments or options were passed in
     if @argv.length == 0
       # In that case two subcases need to be handled
-      # * if global_command is set to false, then the default message will be the output
+      # * if global_command is set to false, then the default help message will be the output
       # * if global_command is set to true, then the global_command will be set to true in
       #   the output hash. This case will be handled by the generate_output_hash method.
       if specifications["global_command"].nil?
@@ -362,9 +406,7 @@ class CinchCliBuilder
       # * if ARGV[0] is one of --version, version or -v and default_version_messages_on is false,
       #   then pass ARGV[0] to generate_output_hash to set the corresponding ARGV[0] to true.
       # * if ARGV[0] is anything else, then it is passed to generate_output_hash to set the
-      #   corresponding ARGV[0] to true. If multiple single hyphen commands are combined into
-      #   one large hyphen command, then the generate_output_hash method will mark each one
-      #   of those commands as true
+      #   corresponding ARGV[0] to true.
 
       help_commands = %w{--help -h help}
       version_commands = %w{--version -v version}
@@ -383,7 +425,8 @@ class CinchCliBuilder
         build_hash[@argv[0]] = true
         return generate_output_hash(build_hash)
       else
-
+        build_hash[@argv[0]] = true
+        return generate_output_hash(build_hash)
       end
 
     end
@@ -417,12 +460,23 @@ class CinchCliBuilder
       # each individual key needs to be examined to see if it meets specifications
       input_keys = input_build_hash.keys
 
+      # Next, we will extract the commands specified in the commands array in
+      # the JSON specifications file. This will allow us to verify whether each
+      # command or argument meets specifications.
+      specified_commands = specifications["commands"]
+
       # If input_keys has a length of one, then it means that we have one
       # of the passthrough commands provided above or we have a custom command
-      # or a custom single hyphenated combo command
+      # or a custom single hyphenated combo command or an argument
       if input_keys.length == 1
+        # Passthrough commands are the ones listed above like help, version
         if passthrough_commands.include?(input_keys[0])
           output_hash = input_build_hash
+        elsif !specified_commands.nil? and specified_commands.include?(input_keys[0])
+
+        else
+          puts generate_error_message(input_keys[0])
+          abort()
         end
       end
     end
@@ -436,6 +490,8 @@ class CinchCliBuilder
   # message that user receives when passing in -h, --help or help as a command.
   # The very specific help message is what is shown when the user
   # types command help x or command -h x or command --help x
+  # @param command [String]  Input command from build_output method if any. command is an optional argument
+  # @return [String]  Output help message
   def generate_help_message(command = "")
     specifications = @input_tool_specifications
     output_help_message = ""
@@ -451,6 +507,26 @@ class CinchCliBuilder
   # generate_error_message method builds an error message based on the invalid
   # input provided. It also provide a fuzzy searched closest match query
   # as a suggestion to the user
+  # @param command [String]  Input command from the generate_output_hash method
+  # @return [String]  Output error message for the input command
+  def generate_error_message(command)
+    specifications = @input_tool_specifications
+    specified_commands = specifications["commands"]
+    output_error_message = "#{specifications["name"]}: '#{command}' is not a #{specifications["name"]} command. See '#{specifications["name"]} --help'.\n"
+    output_error_message += "\n"
+    output_error_message += generate_fuzzy_search_recommendations(command)
+    return output_error_message
+  end
+
+  ##
+  # generate_fuzzy_search_recommendations method builds an output String
+  # based on the input possibly misspelled command and the specified commands
+  # in the JSON file
+  # @param command [String] Input possibly misspelled command
+  # @return [String] Output suggestions string
+  def generate_fuzzy_search_recommendations(command)
+    return ""
+  end
 
   ##
   # generate_version_message method builds and returns a version number message
@@ -464,6 +540,8 @@ class CinchCliBuilder
   ##
   # verify_array_of_strings method is just a helper method to verify whether an
   # Array contains all Strings
+  # @param input_array [Array] An input array consisting of anything practically
+  # @return [Boolean]
   def verify_array_of_strings(input_array)
     string_checked_array = input_array.collect {|element| element.is_a?(String)}
     if string_checked_array.count(false) > 0
@@ -472,4 +550,259 @@ class CinchCliBuilder
       return true
     end
   end
+
+  ##
+  # check_for_empty_objects method checks the commands array to see if any of the
+  # command objects inside them are empty. Empty objects are not allowed. So
+  # if empty objects are found, then it will be an error
+  # @param input_array [Array] An input array consisting of command objects
+  # @return [Boolean] A boolean output verifying whether there are empty objects present inside the input array
+  def check_for_empty_objects(input_array)
+    input_array.each do |command_object|
+      if command_object == {}
+        return false
+      end
+    end
+
+    return true
+  end
+
+  ##
+  # verify_command_objects method is just a helper method to verify whether
+  # the command object inside the provided commands array has all the required
+  # fields to allow for successful parsing and production of error and command
+  # specific help messages.
+  # @param input_array [Array] An input array consisting of command objects
+  # @return [Boolean] A boolean output verifying whether there are valid command objects present inside the input array
+  def verify_command_objects(input_array)
+    # The following provides a list of currently allowed keys. This list will
+    # be adjusted between the gem releases. It is declared here once to
+    # save memory.
+    allowed_keys = %w{short-option long-option plain description global_command alias}
+    command_descriptors = %w{short-option long-option plain}
+
+    # We will declare three sets (one for short-option, long-option and plain)
+    # and these sets will be used to verify the uniqueness of each of the
+    # specified command descriptors.
+    short_options = Set.new()
+    long_options = Set.new()
+    plain_commands = Set.new()
+
+    # To produce detailed error messages, we will also use a Hash to store
+    # the locations of the previously encountered short-options, long-options
+    # and plain commands. The stored index value would be the index+1 of
+    # the command object that they were encountered in.
+    command_descriptor_locations = {}
+
+    # There should be only one global_command in the entire JSON specifications
+    # file. So a global Hash object will be used to keep track of its presence
+    # and throw an error if there are multiple global_command fields in the file
+    global_command_presence = {}
+    global_command_presence["presence"] = false
+
+    # The input_array has an array of ruby hashes containing each command object.
+    # They will be iterated over and each will be checked for validity.
+    input_array.each_with_index do |command_object, index|
+      # They keys for each array are extracted. The keys of the arrays themselves
+      # will be first checked. Then their values will be extracted and checked for
+      # correctness as well.
+      command_object_keys = command_object.keys
+
+      # The keys of each command object can only contain keys that are allowed
+      # according to the list provided at the top. Any other keys will make
+      # it invalid.
+      command_object_keys.each do |key|
+        unless allowed_keys.include?(key)
+          error_message = " The key #{key} provided in command object no:#{index+1} is invalid."
+          error_message += " The list of valid keys can be found at https://github.com/adhithyan15/cinchcli/wiki/Design-Doc."
+          return [false, error_message]
+        end
+      end
+
+      # The specifications must specify at least two fields for all commands except
+      # the global_command. One of the command descriptor like shorthand, longhand
+      # or plain and the description of the command. If either the command descriptor
+      # or the description is missing, then raise an error.
+      if command_object_keys.length == 1
+        if command_object_keys[0] != "global_command"
+           if command_object_keys[0] == "description"
+             error_message = " No valid command descriptors were found in command object no:#{index+1}. "
+             error_message += " You need to specify at least one of these command descriptors for each command - #{command_descriptors}"
+             return [false, error_message]
+           else
+             error_message = " description field missing for the command #{command_object[command_object_keys[0]]} in command object no:#{index+1}."
+             return [false, error_message]
+           end
+        end
+      end
+
+      if command_object_keys.include?("short-option") or command_object_keys.include?("long-option") or command_object_keys.include?("plain") or command_object_keys.include?("global_command")
+        if command_object_keys.include?("global_command")
+          # global_command command object shouldn't contain anyother fields
+          if command_object_keys.length > 1
+            error_message = " You have specified a global_command field in command object no:#{index+1}."
+            error_message += " You cannot use any other command descriptors or description field with the global_command field."
+            return [false,error_message]
+          end
+        else
+          # if it is not a global_command field, then it should contain a description field
+          unless command_object_keys.include?("description")
+            error_message = " You haven't specified a description field for command object no:#{index+1}."
+            return [false,error_message]
+          end
+        end
+      else
+        error_message = " No valid command descriptors were found in command object no:#{index+1}. "
+        error_message += " You need to specify at least one of these command descriptors for each command - #{command_descriptors}."
+        return [false, error_message]
+      end
+
+      # The values of each of the keys need to be tested to make sure that they are valid
+      # First we will make sure that global_command and command descriptors have correct
+      # type of values.
+      if command_object_keys.include?("global_command")
+        # global_command only takes a Boolean value. So let us check that
+        unless [true,false].include?(command_object["global_command"])
+          error_message = " global_command field was specified in command object no:#{index+1}."
+          error_message += " global_command field only takes in a Boolean value."
+          error_message += " But a non Boolean value of #{command_object["global_command"]} has been specified."
+          return [false, error_message]
+        end
+      # The rest of the command descriptors need String values
+      elsif command_object_keys.include?("short-option")
+        unless command_object["short-option"].is_a?(String)
+          error_message = " short-option field was specified in command object no:#{index+1}."
+          error_message += " short-option field only takes in a String value."
+          error_message += " But a non String value of #{command_object["short-option"]} has been specified."
+          return [false, error_message]
+        end
+      elsif command_object_keys.include?("long-option")
+        unless command_object["long-option"].is_a?(String)
+          error_message = " long-option field was specified in command object no:#{index+1}."
+          error_message += " long-option field only takes in a String value."
+          error_message += " But a non String value of #{command_object["long-option"]} has been specified."
+          return [false, error_message]
+        end
+      end
+
+      # Next description needs to be checked to make sure that it has the correct type of values
+      if command_object_keys.include?("description")
+        # we will check and see if the description field is a String or an Array of Strings
+        if command_object["description"].is_a?(String) or command_object["description"].is_a?(Array)
+          # If it is a String, then it should be non-empty
+          if command_object["description"].is_a?(String)
+            if command_object["description"].strip == ""
+              error_message = " description field was specified in command object no:#{index+1}."
+              error_message += " description field value needs to be a non empty String."
+              error_message += " But an empty String has been specified for the description field."
+              return [false, error_message]
+            end
+          end
+
+          # If it is an Array, then it should be non empty and all of its contents must be Strings
+          if command_object["description"].is_a?(Array)
+            if command_object["description"].length == 0
+              error_message = " description field was specified in command object no:#{index+1}."
+              error_message += " description field value needs to be a non empty Array of Strings."
+              error_message += " But an empty Array has been specified for the description field."
+              return [false, error_message]
+            elsif verify_array_of_strings(command_object["description"]) == false
+              error_message = " description field was specified in command object no:#{index+1}."
+              error_message += " description field value needs to be a non empty Array of Strings."
+              error_message += " But the specified Array has for the description field has non String contents."
+              return [false, error_message]
+            end
+          end
+        else
+          error_message = " description field was specified in command object no:#{index+1}."
+          error_message += " description field only takes in a String or an Array of Strings as value."
+          error_message += " But a non String/Array of Strings value of #{command_object["description"]} has been specified."
+          return [false, error_message]
+        end
+      end
+
+      # Before we proceed for the uniqueness check, let us quickly check to make sure that if
+      # short-options are specified, then their length is equal to 1
+      if command_object_keys.include?("short-option")
+        if command_object["short-option"].length != 1
+          error_message = " short-option field was specified in command object no:#{index+1} with a value of #{command_object["short-option"]}."
+          error_message += " But short-option fields can only have Strings of length 1."
+          error_message += " If you need longer short-options, use long-options or consider combining several short-options using the combine_with field."
+          error_message += " You can learn more about the combine_with field at https://github.com/adhithyan15/cinchcli/wiki/Design-Doc#tool-specification"
+          return [false, error_message]
+        end
+      end
+
+      # global_command can only be specified once in a JSON specifications file. Let us
+      # check that.
+      if command_object_keys.include?("global_command")
+        if global_command_presence["presence"] == false
+          global_command_presence["presence"] = true
+          global_command_presence["presence_index"] = index+1
+        else
+          error_message = " global_command field was specified in command object no:#{index+1}."
+          error_message += " But another global_command field was previously specified in command object no:#{global_command_presence["presence_index"]}."
+          error_message += " global_command field can only be used once in your JSON specifications file as duplicating that field doesn't make any sense."
+          return [false, error_message]
+        end
+      end
+
+      # Now we will start checking for the uniqueness of each of the values to the short-option
+      # long-option and plain command descriptors.
+      # First are the short-options
+      if command_object_keys.include?("short-option")
+        # The following line will handle the edge case when for some reason the user
+        # specifies the same single character short-option, long-option and plain command
+        # Such a specification is valid under the design docs. So we need to handle
+        # that use case.
+        correct_short_option = "-" + command_object["short-option"]
+        if short_options.add?(correct_short_option).nil?
+          error_message = " short-option field with value #{command_object["short-option"]} was specified in command object no:#{index+1}."
+          error_message += " But another short-option field previously specified in command object no:#{command_descriptor_locations[correct_short_option]}"
+          error_message += " has the exact same value #{command_object["short-option"]}."
+          error_message += " Each short-option value needs to be unique. Redefining short-options are not allowed."
+          return [false, error_message]
+        else
+          command_descriptor_locations[correct_short_option] = index+1
+        end
+      end
+
+      # Next are the long-options
+      if command_object_keys.include?("long-option")
+        # The same justification for the following line as in the short-option case and also an
+        # additional edge case where the same value has been specified for the long-option and
+        # plain command
+        correct_long_option = "--" + command_object["long-option"]
+        if long_options.add?(correct_long_option).nil?
+          error_message = " long-option field with value #{command_object["long-option"]} was specified in command object no:#{index+1}."
+          error_message += " But another long-option field previously specified in command object no:#{command_descriptor_locations[correct_long_option]}"
+          error_message += " has the exact same value #{command_object["long-option"]}."
+          error_message += " Each long-option value needs to be unique. Redefining long-options are not allowed."
+          return [false, error_message]
+        else
+          command_descriptor_locations[correct_long_option] = index+1
+        end
+      end
+
+      # Finally the plain commands
+      if command_object_keys.include?("plain")
+        if plain_commands.add?(command_object["plain"]).nil?
+          error_message = " plain field with value #{command_object["plain"]} was specified in command object no:#{index+1}."
+          error_message += " But another plain field previously specified in command object no:#{command_descriptor_locations[command_object["plain"]]}"
+          error_message += " has the exact same value #{command_object["plain"]}."
+          error_message += " Each plain field value needs to be unique. Redefining plain field values are not allowed."
+          return [false, error_message]
+        else
+          command_descriptor_locations[command_object["plain"]] = index+1
+        end
+      end
+
+    end
+    return true
+  end
+
+  ##
+  # process_commands_field method processes the commands field in the input specifications file
+  # and add several keys to the input_specifications hash to make it easy for the parser to
+  # parse and process the fields.
 end

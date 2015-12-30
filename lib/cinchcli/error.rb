@@ -111,3 +111,18 @@ end
 # An error for a non Boolean value for the default_help_messages_on field
 class DefaultVersionMessagesOnFieldInJSONSpecsFileHasNonBooleanValueError < StandardError
 end
+
+##
+# An error for a non Array value for the commands field
+class CommandsFieldInJSONSpecsFileHasNonArrayValueError < StandardError
+end
+
+##
+# An error for empty command objects inside the commands array field
+class CommandsFieldInJSONSpecsFileHasEmptyCommandObjectsError < StandardError
+end
+
+##
+# An error for invalid command objects inside the commands array field 
+class CommandsFieldInJSONSpecsFileHasInvalidCommandObjectsError < StandardError
+end

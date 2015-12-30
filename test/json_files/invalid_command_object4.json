@@ -1,0 +1,11 @@
+{
+  "name": "pwd",
+  "description": "Print the full filename of the current working directory",
+  "version": "0.0.1",
+  "commands":[
+    {
+      "global_command":"L",
+      "short-option":"L"
+    }
+  ]
+}
