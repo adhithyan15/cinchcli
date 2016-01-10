@@ -358,9 +358,6 @@ class CinchCliBuilder
         raise CommandsFieldInJSONSpecsFileHasInvalidCommandObjectsError, error_message
       end
     end
-
-
-
     return input_specifications_hash
   end
 
